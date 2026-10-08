@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="lang-zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拉格朗日乘數法 Lagrange multipliers</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-tc@5.2.7/chinese-traditional-400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-tc@5.2.7/chinese-traditional-700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+<script>
+(function () {
+  try {
+    if (localStorage.getItem("lagrange-lang") === "en") {
+      document.documentElement.className = "lang-en";
+      document.documentElement.lang = "en";
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root {
+  --bg: #0e1116;
+  --ink: #e8eaed;
+  --blue: #8ab4ff;
+  --blue-deep: #1d4ed8;
+  --yellow: #f0d060;
+  --line: #2a3544;
+  --panel: #161b22;
+  --muted: #b7c0cc;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+}
+html.lang-zh .en { display: none; }
+html.lang-en .zh { display: none; }
+a { color: var(--blue); }
+a:visited { color: var(--blue); }
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-areas:
+    "header header"
+    "sider main";
+  min-height: 100vh;
+}
+.site-header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #0e1116;
+  border-bottom: 1px solid var(--line);
+}
+.bar {
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.switch {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.switch button {
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--blue);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.switch button[aria-pressed="true"] {
+  background: var(--blue);
+  color: #0e1116;
+  font-weight: 700;
+}
+.sider {
+  grid-area: sider;
+  position: sticky;
+  top: 64px;
+  align-self: start;
+  height: calc(100vh - 64px);
+  overflow: auto;
+  padding: 22px 16px 32px;
+  border-right: 1px solid var(--line);
+  background: #0e1116;
+}
+.toc-label {
+  margin: 0 8px 10px;
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.toc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.toc a {
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.toc a:hover,
+.toc a:focus {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  outline: none;
+}
+main {
+  grid-area: main;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 28px 28px 80px;
+}
+.intro h1 {
+  margin: 0 0 8px;
+  font-size: 1.7rem;
+  line-height: 1.35;
+}
+.intro p { margin: 0 0 12px; }
+.explore {
+  padding: 22px 0 8px;
+  scroll-margin-top: 84px;
+}
+.explore p { margin: 0 0 12px; }
+.ggb-scale {
+  width: 100%;
+  height: 680px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f7f8fa;
+}
+.ggb-actions { margin: 10px 0 0; }
+.ggb-actions button {
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--yellow);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.ggb-actions button:hover,
+.ggb-actions button:focus {
+  background: var(--yellow);
+  color: #0e1116;
+  outline: none;
+}
+.ggb-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ggb-fallback {
+  margin: 0;
+  padding: 28px 18px;
+  color: #1c2430;
+}
+.example {
+  background: var(--panel);
+  border-left: 3px solid var(--yellow);
+  padding: 10px 14px;
+  margin: 14px 0 8px;
+  overflow-x: auto;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 36px 0 8px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 84px;
+}
+.stage { order: -1; }
+.kicker {
+  margin: 0;
+  color: var(--yellow);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+h2 {
+  margin: 2px 0 12px;
+  font-size: 1.22rem;
+  line-height: 1.4;
+}
+.label {
+  margin: 16px 0 4px;
+  color: var(--blue);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.question, .body, .mis { margin: 0; }
+.formula {
+  background: var(--panel);
+  border-left: 3px solid var(--blue);
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+.watch {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.watch li { margin: 4px 0; }
+.watch li::marker { color: var(--yellow); }
+.mis {
+  border-left: 3px solid var(--yellow);
+  padding-left: 12px;
+}
+.stage video {
+  width: 100%;
+  display: block;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "sider"
+      "main";
+  }
+  .sider {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px 12px;
+  }
+  .toc {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+  }
+  .toc a {
+    flex: 0 0 auto;
+    border-color: var(--line);
+    border-radius: 999px;
+    max-width: 260px;
+  }
+  .bar, main { padding-left: 16px; padding-right: 16px; }
+  .bar { align-items: flex-start; }
+  .ggb-scale { height: 720px; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<header class="site-header">
+  <div class="bar">
+    <p class="brand">
+      <span class="zh">拉格朗日乘數法</span>
+      <span class="en">Lagrange multipliers</span>
+    </p>
+    <div class="switch" role="group" aria-label="Language">
+      <button type="button" id="to-zh" lang="zh-Hant">繁體中文</button>
+      <button type="button" id="to-en" lang="en">English</button>
+    </div>
+  </div>
+</header>
+<aside class="sider">
+  <p class="toc-label"><span class="zh">十步</span><span class="en">Ten steps</span></p>
+  <nav class="toc" aria-label="Steps">
+    <a href="#step-1"><span class="zh">約束把曲面截成哪條曲線？</span><span class="en">Which curve does the constraint cut from the graph?</span></a>
+    <a href="#step-2"><span class="zh">加上約束以後，哪些點還能參加比較？</span><span class="en">Which points may still compete?</span></a>
+    <a href="#step-3"><span class="zh">還沒到最高點時，沿圓走會怎樣？</span><span class="en">What happens while walking the circle?</span></a>
+    <a href="#step-4"><span class="zh">為什麼沿切線走時 f 暫時不變？</span><span class="en">Why does f stay unchanged along the tangent?</span></a>
+    <a href="#step-5"><span class="zh">梯度不平行時，為什麼還能上升？</span><span class="en">Why can f still rise if gradients are not parallel?</span></a>
+    <a href="#step-6"><span class="zh">λ 比較的是什麼？</span><span class="en">What is λ comparing?</span></a>
+    <a href="#step-7"><span class="zh">三條方程式從哪裡來？</span><span class="en">Where do the three equations come from?</span></a>
+    <a href="#step-8"><span class="zh">為什麼正好是這兩個點？</span><span class="en">Why exactly these two points?</span></a>
+    <a href="#step-9"><span class="zh">哪個最大，哪個最小？</span><span class="en">Which value is largest?</span></a>
+    <a href="#step-10"><span class="zh">同一張圖上要看到什麼？</span><span class="en">What does the finished picture show?</span></a>
+  </nav>
+</aside>
+<main>
+  <section class="intro">
+    <h1>
+      <span class="zh">沿單位圓找 f(x, y) = x + y 的最大與最小</span>
+      <span class="en">Maximum and minimum of f(x, y) = x + y on the unit circle</span>
+    </h1>
+    <p>
+      <span class="zh">這是一頁順著讀的講義。文字是主線，每一步上方的影片只演剛寫完的那一個動作；切換語言只換文字，十段影片保持英文。例題公式下面有一塊可旋轉、可改式子的 GeoGebra 3D。不播影片，也能看出方法在做什麼、三條方程式怎麼來，以及為什麼候選點正好是這兩個。</span>
+      <span class="en">Read this as a lesson. The text is the thread, and the clip above each step plays only the action that paragraph just described. Switching language changes the text only; the ten clips stay in English. Under the example there is a GeoGebra 3D view you can rotate, zoom, and edit. Without pressing play, you can still see what the method does, where the three equations come from, and why the candidates are exactly these two points.</span>
+    </p>
+    <div class="example">
+      \[
+      f(x,y)=x+y,\qquad g(x,y)=x^{2}+y^{2}-1=0
+      \]
+    </div>
+  </section>
+
+  <section class="explore" id="explore">
+    <p class="kicker"><span class="zh">先自己轉著看</span><span class="en">Look around first</span></p>
+    <h2>
+      <span class="zh">藍色曲面和黃色約束放在同一張 3D 圖裡</span>
+      <span class="en">The blue graph and the yellow constraint in one 3D view</span>
+    </h2>
+    <p>
+      <span class="zh">藍色曲面是 z = f(x, y) = x + y。黃色半透明柱面是約束 x² + y² = 1，它沿豎直方向穿過這張曲面。粗黃線 C 是單位圓抬到曲面上的那一圈，後面的步驟就沿著這條切痕找最高和最低。按住圖面拖曳可以旋轉，滾輪或右上角按鈕可以縮放，也可以打開全螢幕。代數區裡的 f(x, y) 和 eq 都能直接改，兩張曲面會跟著重畫；C 跟著 f 更新。若把 eq 改成別的方程，黃色曲面就是改後的約束。</span>
+      <span class="en">The blue surface is z = f(x, y) = x + y. The translucent yellow cylinder is the constraint x² + y² = 1, cutting through that surface in the vertical direction. The thick yellow loop C is the unit circle lifted onto the graph; later steps walk that cut to find the highest and lowest points. Drag the view to rotate. Scroll, or use the buttons at the upper right, to zoom, and you can open it fullscreen. In the algebra panel, edit f(x, y) and eq; both surfaces redraw, and C follows f. If you change eq to another equation, the yellow surface is the constraint you typed.</span>
+    </p>
+    <div class="ggb-scale">
+      <div id="ggb-element"></div>
+    </div>
+    <p class="ggb-actions">
+      <button type="button" id="ggb-restore" disabled>
+        <span class="zh">回到例題式子</span>
+        <span class="en">Restore the example</span>
+      </button>
+    </p>
+  </section>
+
+  <article class="step" id="step-1">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 1 步</span><span class="en">Step 1</span></p>
+      <h2>
+        <span class="zh">約束把曲面截成哪條曲線？</span>
+        <span class="en">Which curve does the constraint cut from the graph?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">約束把目標函數的圖像截成哪條曲線？</span>
+        <span class="en">Which curve does the constraint cut from the graph of f?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">這一幕先看約束怎樣切目標函數的圖像，後面才在切痕上找最高和最低。藍色斜面是 z = f(x, y) = x + y，點的高度等於橫坐標與縱坐標之和；斜面沒有邊界，朝右上可以一直升高，所以單看整個斜面並沒有最高點。黃色單位圓躺在 xy 平面，方程是 x² + y² = 1。約束用過這條圓的豎直方向去截斜面，截下來的不是圓盤，而是斜面上的一條閉曲線，標成 C。C 上的點 (x, y) 都在單位圓上，高度仍是 x + y，因此曲線一邊拱起、一邊低下。此後要比較的高度都在 C 上。下一步先把底面上的這條黃圓單獨看清，確認只有圓上的點才算數。</span>
+        <span class="en">This step shows how the constraint cuts the graph, before any later step looks for the highest and lowest points on that cut. The blue plane is z = f(x, y) = x + y, so the height of a point is the sum of its two coordinates. The plane has no boundary and keeps rising toward the upper right, so the plane alone has no highest point. The yellow unit circle lies in the xy-plane and is x² + y² = 1. Cutting straight up from that circle does not leave a disk. It leaves one closed curve on the plane, marked C. Every point of C has (x, y) on the unit circle and height x + y, so the curve arches up on one side and down on the other. From here on, the heights being compared are the heights on C. The next step looks at the yellow circle on the floor by itself and checks that only points on it count.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ z=x+y,\quad x^{2}+y^{2}=1 \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">藍色斜面：它是 z = x + y 的圖像。</span><span class="en">The blue plane: it is the graph z = x + y.</span></li>
+        <li><span class="zh">xy 平面上的黃色單位圓：約束 x² + y² = 1。</span><span class="en">The yellow unit circle in the xy-plane: the constraint x² + y² = 1.</span></li>
+        <li><span class="zh">斜面上標著 C 的黃色閉曲線：約束把斜面截開後留下的那一條。</span><span class="en">The yellow closed curve marked C on the plane: the curve left when the constraint cuts the plane.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為約束切下來的是包含內部的一塊曲面，而不是斜面上的閉曲線 C。</span>
+        <span class="en">The constraint cuts out the closed curve C on the plane, not a filled patch of surface.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/01-unconstrained.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-2">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 2 步</span><span class="en">Step 2</span></p>
+      <h2>
+        <span class="zh">加上約束以後，哪些點還能參加比較？</span>
+        <span class="en">After the constraint is added, which points may still compete?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">加上約束以後，哪些點還能參加比較？</span>
+        <span class="en">After the constraint is added, which points may still compete?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">約束的角色，是把上一幕那個沒有邊界的平面，收成一個可以取到極值的集合。本題只用等式約束 g(x, y) = x² + y² − 1 = 0，它等價於單位圓 x² + y² = 1。畫面裡黃色閉曲線上的每一點都滿足這條方程式，圓內、圓外的點都不滿足，即使那裡的 f 更大，也不能拿來比較。因此最大從現在起只在黃色圓上討論。單位圓是封閉且有界的，f 又連續，所以最大值和最小值一定取得到，問題變成在圓上把它們找出來。若把約束錯看成不等式 x² + y² ≤ 1，搜尋範圍就會多出整個圓盤。下一步沿著這條圓走，看 f 還會不會繼續變大。</span>
+        <span class="en">The constraint turns the unbounded plane of the previous step into a set on which extrema exist. This lesson uses only the equality g(x, y) = x² + y² − 1 = 0, which is the unit circle x² + y² = 1. Every point of the yellow closed curve satisfies that equation. Points inside or outside do not, so they are dropped even when f is larger there. From here on, “largest” means largest on the yellow circle. The circle is closed and bounded and f is continuous, so a maximum and a minimum are attained, and the job is to find them on the circle. Reading the constraint as the inequality x² + y² ≤ 1 would add the whole disk and would be a different problem. The next step walks along this circle to see whether f is still increasing.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ x^{2}+y^{2}=1 \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">黃色單位圓：這是唯一留下的可行集合，畫在 xy 平面上。</span><span class="en">The yellow unit circle: it is the only feasible set, drawn in the xy-plane.</span></li>
+        <li><span class="zh">先出現再消失的灰點：它們不在圓上，不參加比較。</span><span class="en">The gray points that appear and then vanish: they are off the circle and do not compete.</span></li>
+        <li><span class="zh">留在 (0, 1) 的白點：它在圓上，之後的移動都不能離開這條曲線。</span><span class="en">The white point that stays at (0, 1): it is on the circle, and later motion has to stay on this curve.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">把等式約束 x² + y² = 1 誤看成包含內部的不等式 x² + y² ≤ 1。</span>
+        <span class="en">The constraint is the circle x² + y² = 1, not the disk x² + y² ≤ 1.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/02-constraint.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-3">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 3 步</span><span class="en">Step 3</span></p>
+      <h2>
+        <span class="zh">還沒到最高點時，沿圓走會怎樣？</span>
+        <span class="en">Before the highest point, what happens as you walk the circle?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">還沒到最高點時，沿圓走會怎樣？</span>
+        <span class="en">Before the highest point, what happens as you walk the circle?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">候選點必須落在約束上，所以這一幕只讓點在黃色單位圓上移動，用來判斷現在是不是已經最高。f 的等高線是直線 x + y = c；c 越大，直線越靠右上，線上的函數值也越大。動點從 (√2/2, −√2/2) 出發，此時 c = 0，再逆時針走到 (1, 0)。它離開 c = 0，踩上更高的 c = 1，函數值從 0 變成 1，仍小於圓上最高值 √2。只要還能跨上更高的等高線，這個點就不可能是極大點。這一步只使用圓的切向，還沒有使用梯度。下一步停在真正貼住的那個切點，看上升為什麼會停下來。</span>
+        <span class="en">A candidate has to lie on the constraint, so this step moves a point only on the yellow unit circle and asks whether it is already as high as f can get. The level sets of f are the straight lines x + y = c. Larger c sits farther toward the upper right and carries a larger value. The point starts at (√2/2, −√2/2), where c = 0, and walks counterclockwise to (1, 0). It leaves c = 0 and steps onto the higher line c = 1, so f goes from 0 to 1. That is still less than the highest value on the circle, √2. As long as a higher level line is still available, the point cannot be a maximum. This step uses only the tangent direction of the circle. Gradients have not entered yet. The next step stops at the point where a level line actually hugs the circle, and asks why the climb stops there.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ x+y=c \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">黃色圓上的白點：從 (√2/2, −√2/2) 走到 (1, 0)，始終沒有離開圓。</span><span class="en">The white point on the yellow circle: it travels from (√2/2, −√2/2) to (1, 0) and never leaves the circle.</span></li>
+        <li><span class="zh">標著 c = 0 的藍色實線：點出發時站在這條等高線上。</span><span class="en">The solid blue line marked c = 0: the point starts on this level line.</span></li>
+        <li><span class="zh">更高的實線 c = 1，以及仍標著 not reached 的虛線 c = √2。</span><span class="en">The higher solid line c = 1, and the dashed line c = √2 still marked “not reached.”</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為點已經在約束上，函數值就不會再變。</span>
+        <span class="en">A point on the constraint need not have a constant value of f.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/03-walk.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-4">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 4 步</span><span class="en">Step 4</span></p>
+      <h2>
+        <span class="zh">為什麼沿切線走時 f 暫時不變？</span>
+        <span class="en">At the point of tangency, why does f stay unchanged along the tangent?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">切點上，為什麼沿著切線走時 f 會暫時不變？</span>
+        <span class="en">At the point of tangency, why does f stay unchanged along the tangent?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">極值的幾何必要條件出現在約束與某條等高線相切的時候，而不是它們還能交叉穿過的時候。在點 (√2/2, √2/2)，黃色單位圓與藍色等高線 x + y = √2 只接觸於這一點，並共用同一條切線 T。沿著 T 移動一小段，點仍然留在 x + y = √2 上，所以 f 保持為 √2，切向導數 ∇f · T 等於 0。這只說明一階變化消失，並不自動說明它是最大還是最小，因為圓會彎離切線，兩側都還要再比較。它排除的是那些還能沿切向爬升的點。下一步把切線貼住等高線改寫成兩個梯度方向的關係，這樣才好寫成方程式。</span>
+        <span class="en">The geometric necessary condition for an extremum is that the constraint touches some level line, rather than crossing it and moving on. At (√2/2, √2/2) the yellow unit circle meets the blue level line x + y = √2 at exactly one point, and they share the tangent line T. A short slide along T stays on x + y = √2, so f remains √2 and the tangential derivative ∇f · T is 0. That says only that the first-order change has vanished. It does not yet say whether the point is a maximum or a minimum, because the circle bends away from the tangent and both sides still have to be compared. What it rules out are points where f can still climb along the tangent. The next step rewrites “the tangent hugs the level line” as a relation between the two gradient directions, which is what can be turned into equations.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ \nabla f\cdot T=0 \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">切點 (√2/2, √2/2)：黃色圓與藍色直線只在這裡接觸。</span><span class="en">The contact point (√2/2, √2/2): the yellow circle meets the blue line only here.</span></li>
+        <li><span class="zh">標著 T 的藍色直線：它就是等高線 x + y = √2，也是圓的切線。</span><span class="en">The blue line marked T: it is the level line x + y = √2 and the tangent to the circle.</span></li>
+        <li><span class="zh">沿 T 來回的白點：旁邊的 f = √2 始終不變。</span><span class="en">The white point sliding back and forth along T: the label f = √2 does not change.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為切向導數為零就已經證明這個點是最大值。</span>
+        <span class="en">A zero derivative along the tangent is necessary, but it does not by itself prove a maximum.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/04-tangent.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-5">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 5 步</span><span class="en">Step 5</span></p>
+      <h2>
+        <span class="zh">梯度不平行時，為什麼還能上升？</span>
+        <span class="en">If the gradients are not parallel, why can f still rise?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">兩個梯度不平行時，為什麼還能沿約束上升？</span>
+        <span class="en">When the two gradients are not parallel, why can f still rise along the constraint?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">梯度是把上一幕的切線語言換成向量語言，方便寫成方程式。∇f = (1, 1) 指向 f 上升最快的方向，∇g = (2x, 2y) 垂直於約束。兩支白色箭頭都從圓上的同一個點畫出。在 (1, 0)，∇g = (2, 0)，與 ∇f 不平行，∇f 在圓的切線上仍有正的投影，所以沿著圓還能走到更大的 f。在 (√2/2, √2/2)，兩支箭頭平行，∇f 全部垂直於切線，沿著圓的一階移動不能再讓 f 上升或下降。因此只有平行的那些點才有資格進入方程組。平行只比較方向，還不決定箭頭誰長誰短。下一步用一個純量 λ 把長度也對上。</span>
+        <span class="en">Gradients translate the tangent language of the previous step into vectors, which are what the equations will use. ∇f = (1, 1) points in the direction where f increases fastest, and ∇g = (2x, 2y) is perpendicular to the constraint. Both white arrows are drawn from the same point on the circle. At (1, 0), ∇g = (2, 0) is not parallel to ∇f, so ∇f still has a positive projection on the tangent and a step along the circle can raise f. At (√2/2, √2/2) the arrows are parallel. ∇f is entirely perpendicular to the tangent, and a first-order move along the circle can no longer raise or lower f. Only the parallel points qualify for the equation system. Parallelism compares directions, not which arrow is longer. The next step introduces a scalar λ to match the lengths as well.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ \nabla f\parallel\nabla g \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">(1, 0) 上兩支不平行的白箭頭：∇f = (1, 1)，∇g = (2, 0)。</span><span class="en">The two non-parallel white arrows at (1, 0): ∇f = (1, 1) and ∇g = (2, 0).</span></li>
+        <li><span class="zh">白點從 (1, 0) 沿黃圓邁出的那一步：此時 f 還能上升。</span><span class="en">The step the white point takes from (1, 0) along the yellow circle: f can still rise.</span></li>
+        <li><span class="zh">切點上同方向的兩支白箭頭：∇g = (√2, √2)，與 ∇f 平行，再沿圓走也不再升高。</span><span class="en">The two white arrows in the same direction at the top point: ∇g = (√2, √2) is parallel to ∇f, and leaving along the circle does not raise f.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為梯度平行表示兩個函數相等，或表示兩支箭頭一樣長。</span>
+        <span class="en">Parallel gradients do not mean the two functions are equal, and they do not mean the arrows have the same length.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/05-gradients.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-6">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 6 步</span><span class="en">Step 6</span></p>
+      <h2>
+        <span class="zh">λ 比較的是什麼？</span>
+        <span class="en">What is λ comparing?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">λ 在 ∇f = λ∇g 裡比較的是什麼？</span>
+        <span class="en">In ∇f = λ∇g, what is λ comparing?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">兩個平面向量平行，意思就是其中一個等於另一個乘上一個純量，這個純量定義為 λ，寫成 ∇f = λ∇g。在極大點 (√2/2, √2/2)，∇f = (1, 1)，∇g = (√2, √2)。後者的長度是 2，前者的長度是 √2，所以 λ = √2/2；用這個倍數去縮放較長的箭頭，尖端會和 ∇f 重合。λ 的絕對值只負責長度比，正號表示兩支箭頭同向。它不是切線的斜率，也不是 f 算出來的高度。有了可以按分量寫開的向量等式之後，下一步才能列出普通的代數方程式。</span>
+        <span class="en">Two plane vectors are parallel when one is a scalar multiple of the other. That scalar is λ, and the relation is written ∇f = λ∇g. At the maximum point (√2/2, √2/2), ∇f = (1, 1) and ∇g = (√2, √2). The second arrow has length 2 and the first has length √2, so λ = √2/2. Scaling the longer arrow by this factor makes its tip land on ∇f. The absolute value of λ is only the ratio of the lengths, and the positive sign says the arrows point the same way. λ is not the slope of the tangent, and it is not the height that f computes. Once the vector equation can be opened component by component, the next step writes ordinary algebra.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ \nabla f=\lambda\nabla g \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">較短的白箭頭 ∇f = (1, 1)：它的長度是 √2。</span><span class="en">The shorter white arrow ∇f = (1, 1): its length is √2.</span></li>
+        <li><span class="zh">較長的白箭頭 ∇g = (√2, √2)：它的長度是 2。</span><span class="en">The longer white arrow ∇g = (√2, √2): its length is 2.</span></li>
+        <li><span class="zh">被 λ = √2/2 縮短的那支箭頭：縮完以後尖端落到 ∇f 上。</span><span class="en">The arrow shortened by λ = √2/2: after the scaling, its tip lands on ∇f.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為 λ 是切線斜率，或以為 λ 等於 f 的最大值。</span>
+        <span class="en">λ is not the slope of the tangent, and it is not the maximum value of f.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/06-lambda.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-7">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 7 步</span><span class="en">Step 7</span></p>
+      <h2>
+        <span class="zh">三條方程式從哪裡來？</span>
+        <span class="en">Where do the three equations come from?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">這一題的三條方程式各自是從哪裡來的？</span>
+        <span class="en">Where does each of this problem’s three equations come from?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">方程組來自上一幕的向量等式，再加上點必須留在約束上。把 ∇f = λ∇g 按坐標拆開：左邊是 (1, 1)，右邊是 λ(2x, 2y)，於是第一行是 1 = λ2x，第二行是 1 = λ2y。第三行不是梯度，而是約束 g(x, y) = 0 本身，即 x² + y² = 1。三行都是必要條件：少了前兩行就不保證切向導數為零，少了第三行，解會跑出單位圓。由前兩行可以看出，只要 λ 不等於 0，就有 x = 1/(2λ)、y = 1/(2λ)，因此 x = y。這個關係還沒有用到圓的半徑。下一步把 x = y 代回第三行，得到具體的點。</span>
+        <span class="en">The system comes from the vector equation of the previous step, together with the demand that the point stay on the constraint. Split ∇f = λ∇g into coordinates. The left side is (1, 1) and the right side is λ(2x, 2y), so the first line is 1 = λ2x and the second line is 1 = λ2y. The third line is not a gradient. It is the constraint g(x, y) = 0 itself, that is x² + y² = 1. All three lines are necessary. Without the first two, the tangential derivative need not be zero. Without the third, a solution can leave the unit circle. From the first two lines, whenever λ is not zero, x = 1/(2λ) and y = 1/(2λ), so x = y. That relation has not yet used the radius of the circle. The next step substitutes x = y into the third line and gets the actual points.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">
+        \[
+        \begin{aligned}
+        1 &= \lambda 2x \\
+        1 &= \lambda 2y \\
+        x^{2}+y^{2} &= 1
+        \end{aligned}
+        \]
+      </div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">第一行 1 = λ2x：它是梯度等式的 x 分量。</span><span class="en">The first line 1 = λ2x: it is the x-component of the gradient equation.</span></li>
+        <li><span class="zh">第二行 1 = λ2y：它是 y 分量，並迫使 x = y。</span><span class="en">The second line 1 = λ2y: it is the y-component, and together with the first line it forces x = y.</span></li>
+        <li><span class="zh">第三行 x² + y² = 1：它是約束本身，把點留在單位圓上。</span><span class="en">The third line x² + y² = 1: it is the constraint itself and keeps the point on the unit circle.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為寫完 ∇f = λ∇g 就夠了，忘記約束本身也是一條方程式。</span>
+        <span class="en">∇f = λ∇g is not enough; the constraint itself is the third equation.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/07-equations.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-8">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 8 步</span><span class="en">Step 8</span></p>
+      <h2>
+        <span class="zh">為什麼正好是這兩個點？</span>
+        <span class="en">Why do the solutions consist of exactly these two points?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">為什麼解出來正好是這兩個點？</span>
+        <span class="en">Why do the solutions consist of exactly these two points?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">解方程組就是把上一幕的 x = y 代回單位圓。由 x² + y² = 1 與 x = y，得到 2x² = 1，所以 x = √2/2 或 x = −√2/2，而 y 必須取同一個符號。因此正好兩個解：(√2/2, √2/2) 與 (−√2/2, −√2/2)。畫面上的直線 y = x 與黃色單位圓相交於這兩點，右上那點朝向 f 增加的方向，左下那點朝向相反方向。x = −y 不會是解，因為它會讓 1 = λ2x 與 1 = λ2y 變成 1 = −1。兩個點目前只是候選，還分不出最大和最小。下一步把它們代回 f。</span>
+        <span class="en">Solving the system means substituting x = y from the previous step back into the unit circle. From x² + y² = 1 and x = y one gets 2x² = 1, so x = √2/2 or x = −√2/2, and y must carry the same sign. There are therefore exactly two solutions: (√2/2, √2/2) and (−√2/2, −√2/2). On the screen the line y = x cuts the yellow unit circle at these two points. The upper-right point faces the direction in which f increases, and the lower-left point faces the opposite direction. x = −y cannot be a solution, because it would turn 1 = λ2x and 1 = λ2y into 1 = −1. The two points are only candidates so far. Nothing yet says which is largest. The next step substitutes them into f.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">
+        \[
+        \left(\frac{\sqrt{2}}{2},\frac{\sqrt{2}}{2}\right),\quad
+        \left(-\frac{\sqrt{2}}{2},-\frac{\sqrt{2}}{2}\right)
+        \]
+      </div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">藍色直線 x = y：它來自前兩條分量等式，穿過原點。</span><span class="en">The blue line x = y: it comes from the first two component equations and passes through the origin.</span></li>
+        <li><span class="zh">右上的白點 (√2/2, √2/2)：直線與黃圓的一個交點。</span><span class="en">The upper-right white point (√2/2, √2/2): one intersection of the line and the yellow circle.</span></li>
+        <li><span class="zh">左下的白點 (−√2/2, −√2/2)：另一個交點，圓上沒有第三個。</span><span class="en">The lower-left white point (−√2/2, −√2/2): the other intersection, with no third point on the circle.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為四個象限各有一個解，或把 √2/2 寫成 √2。</span>
+        <span class="en">There are not four quadrant solutions, and √2/2 is not the same number as √2.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/08-solve.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-9">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 9 步</span><span class="en">Step 9</span></p>
+      <h2>
+        <span class="zh">哪個最大，哪個最小？</span>
+        <span class="en">Which value is the maximum, and which is the minimum?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">這兩個點的函數值，哪個最大、哪個最小？</span>
+        <span class="en">Of the two function values, which is the maximum and which is the minimum?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">梯度條件只負責產生候選點，不負責宣佈誰最大。把兩個點代回 f(x, y) = x + y：右上點的兩個坐標都是 √2/2，所以 f = √2；左下點的兩個坐標都是 −√2/2，所以 f = −√2。單位圓封閉有界，連續函數的最大和最小一定落在候選點裡，而本題的候選點只有這兩個，因此 √2 是最大值，−√2 是最小值。對應的乘數分別是 λ = √2/2 與 λ = −√2/2。負的 λ 表示極小點上 ∇f 與 ∇g 反向，不能拿 λ 的大小代替 f 的比較。例題到這裡算完，最後一步把圓、等高線、兩個點和兩組箭頭收進同一張圖。</span>
+        <span class="en">The gradient condition only produces candidates. It does not announce which one is largest. Substitute the two points into f(x, y) = x + y. Both coordinates of the upper-right point are √2/2, so f = √2. Both coordinates of the lower-left point are −√2/2, so f = −√2. The unit circle is closed and bounded, so the maximum and minimum of a continuous function occur among the candidates, and this problem has only these two. Therefore √2 is the maximum and −√2 is the minimum. The multipliers are λ = √2/2 and λ = −√2/2. A negative λ means that at the minimum, ∇f and ∇g point in opposite directions. The size of λ is not a substitute for comparing f. The example is now computed. The last step puts the circle, the level lines, the two points, and both pairs of arrows into one picture.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">
+        \[
+        f\left(\frac{\sqrt{2}}{2},\frac{\sqrt{2}}{2}\right)=\sqrt{2},\quad
+        f\left(-\frac{\sqrt{2}}{2},-\frac{\sqrt{2}}{2}\right)=-\sqrt{2}
+        \]
+      </div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">右上點旁的 f = √2 與 maximum：這是圓上的最大值。</span><span class="en">f = √2 and the word maximum beside the upper-right point: this is the largest value on the circle.</span></li>
+        <li><span class="zh">左下點旁的 f = −√2 與 minimum：這是圓上的最小值。</span><span class="en">f = −√2 and the word minimum beside the lower-left point: this is the smallest value on the circle.</span></li>
+        <li><span class="zh">兩條藍色等高線 x + y = √2 與 x + y = −√2：各自貼住一個點。</span><span class="en">The two blue level lines x + y = √2 and x + y = −√2: each one touches one of the points.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為 λ 比較大的那個點就是最大值，不必把點代回 f。</span>
+        <span class="en">The point with the larger λ is not automatically the maximum; the points still have to be substituted into f.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/09-check.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+
+  <article class="step" id="step-10">
+    <div class="prose">
+      <p class="kicker"><span class="zh">第 10 步</span><span class="en">Step 10</span></p>
+      <h2>
+        <span class="zh">同一張圖上要看到什麼？</span>
+        <span class="en">What should the finished picture show all at once?</span>
+      </h2>
+      <p class="label"><span class="zh">這一步要回答的問題</span><span class="en">The question this step answers</span></p>
+      <p class="question">
+        <span class="zh">整套方法在同一張圖上要看到什麼？</span>
+        <span class="en">What should the finished picture show all at once?</span>
+      </p>
+      <p class="label"><span class="zh">正文</span><span class="en">Explanation</span></p>
+      <p class="body">
+        <span class="zh">最後一幕不再推導新的方程式，而是把整條路線放在同一個畫面裡檢查。黃色單位圓是約束 g = 0，兩條藍色直線是極值對應的等高線 x + y = √2 與 x + y = −√2。右上點與左下點是方程組的全部解。每個點旁邊有一組平行的白色箭頭：極大點上 ∇f 與 ∇g 同向，λ = √2/2；極小點上二者反向，λ = −√2/2。平行保證沿著圓的一階變化為零，代回 f 才分辨出 √2 最大、−√2 最小。換成別的等式約束，順序也一樣：先寫 ∇f = λ∇g 與 g = 0，解出全部候選點，再比較目標函數的值，而不是比較 λ 的大小。</span>
+        <span class="en">The last scene does not derive a new equation. It puts the whole route on one screen so it can be checked. The yellow unit circle is the constraint g = 0. The two blue lines are the level sets that belong to the extrema, x + y = √2 and x + y = −√2. The upper-right point and the lower-left point are every solution of the system. Each point carries a parallel pair of white arrows. At the maximum, ∇f and ∇g point the same way and λ = √2/2. At the minimum they point opposite ways and λ = −√2/2. Parallel arrows guarantee that the first-order change along the circle is zero. Substituting into f is what separates √2 as the maximum from −√2 as the minimum. For another equality constraint the order is the same: write ∇f = λ∇g and g = 0, solve for every candidate, then compare values of the objective rather than sizes of λ.</span>
+      </p>
+      <p class="label"><span class="zh">公式</span><span class="en">Formula</span></p>
+      <div class="formula">\[ \nabla f=\lambda\nabla g,\quad g(x,y)=0 \]</div>
+      <p class="label"><span class="zh">看動畫時盯住什麼</span><span class="en">What to watch in the animation</span></p>
+      <ol class="watch">
+        <li><span class="zh">黃色單位圓，以及貼住兩個點的兩條藍色等高線。</span><span class="en">The yellow unit circle, and the two blue level lines touching the two points.</span></li>
+        <li><span class="zh">右上與左下兩個白點：它們是方程組的全部解。</span><span class="en">The upper-right and lower-left white points: they are every solution of the system.</span></li>
+        <li><span class="zh">兩組平行白箭頭：極大點同向，λ = √2/2；極小點反向，λ = −√2/2。</span><span class="en">The two parallel pairs of white arrows: same direction at the maximum, with λ = √2/2; opposite directions at the minimum, with λ = −√2/2.</span></li>
+      </ol>
+      <p class="label"><span class="zh">常見誤解</span><span class="en">A common misconception</span></p>
+      <p class="mis">
+        <span class="zh">以為畫面上箭頭平行，就不必再比較兩個點的函數值。</span>
+        <span class="en">Parallel arrows do not tell you which point is larger; the values of f still have to be compared.</span>
+      </p>
+    </div>
+    <div class="stage">
+      <video src="media/10-summary.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </article>
+</main>
+</div>
+<script>
+function setLang(lang) {
+  var root = document.documentElement;
+  var zh = lang !== "en";
+  root.classList.toggle("lang-zh", zh);
+  root.classList.toggle("lang-en", !zh);
+  root.lang = zh ? "zh-Hant" : "en";
+  document.getElementById("to-zh").setAttribute("aria-pressed", zh ? "true" : "false");
+  document.getElementById("to-en").setAttribute("aria-pressed", zh ? "false" : "true");
+  try { localStorage.setItem("lagrange-lang", zh ? "zh" : "en"); } catch (e) {}
+}
+document.getElementById("to-zh").addEventListener("click", function () { setLang("zh"); });
+document.getElementById("to-en").addEventListener("click", function () { setLang("en"); });
+document.addEventListener("DOMContentLoaded", function () {
+  var saved = null;
+  try { saved = localStorage.getItem("lagrange-lang"); } catch (e) {}
+  setLang(saved === "en" ? "en" : "zh");
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "\\[", right: "\\]", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+});
+
+function ggbCommands(narrow) {
+  return [
+    narrow ? 'SetPerspective("T/A")' : 'SetPerspective("AT")',
+    "f(x, y) = x + y",
+    'SetColor(f, "#4C8DFF")',
+    "SetFilling(f, 0.78)",
+    "ShowLabel(f, false)",
+    "eq: x^2 + y^2 = 1",
+    'SetColor(eq, "#F0D060")',
+    "SetFilling(eq, 0.28)",
+    "SetLineThickness(eq, 5)",
+    "ShowLabel(eq, false)",
+    "C = Curve(cos(t), sin(t), f(cos(t), sin(t)), t, 0, 2 pi)",
+    'SetColor(C, "#F0D060")',
+    "SetLineThickness(C, 13)",
+    "ShowLabel(C, true)",
+    "ZoomIn(-2.3, -2.3, -2.5, 2.3, 2.3, 2.5)",
+    "SetViewDirection(Vector((0.63, -0.57, 0.55)))"
+  ];
+}
+
+function ggbApply(api) {
+  var narrow = window.matchMedia("(max-width: 860px)").matches;
+  var cmds = ggbCommands(narrow);
+  var failed = [];
+  var i;
+  for (i = 0; i < cmds.length; i++) {
+    var ok = false;
+    try { ok = api.evalCommand(cmds[i]) !== false; } catch (err) { ok = false; }
+    if (!ok) failed.push(cmds[i]);
+  }
+  try { api.setAuxiliary("C", true); } catch (err) {}
+  try {
+    api.setPerspective(narrow ? "T/A" : "AT");
+  } catch (err) {}
+  var host = document.getElementById("ggb-element");
+  if (host) {
+    var names = "";
+    try { names = String(api.getAllObjectNames()); } catch (err) { names = ""; }
+    host.setAttribute("data-ggb", (failed.length ? "fail " + failed.join(" || ") : "ok") + " :: " + names);
+  }
+}
+
+function injectGgb() {
+  var host = document.getElementById("ggb-element");
+  var box = document.querySelector(".ggb-scale");
+  if (!host || !box || host.getAttribute("data-ggb-started")) return;
+  host.setAttribute("data-ggb-started", "1");
+  if (typeof GGBApplet !== "function") {
+    host.setAttribute("data-ggb", "missing-script");
+    host.innerHTML = '<p class="ggb-fallback"><span class="zh">這塊 3D 圖要從 geogebra.org 載入。請用本機伺服器或 GitHub Pages 打開頁面，並確認網路可用。</span><span class="en">This 3D view loads from geogebra.org. Open the page through the local server or GitHub Pages, with a network connection.</span></p>';
+    return;
+  }
+  var params = {
+    appName: "3d",
+    width: Math.max(320, Math.floor(box.clientWidth)),
+    height: Math.max(480, Math.floor(box.clientHeight)),
+    language: document.documentElement.classList.contains("lang-en") ? "en" : "zh-TW",
+    perspective: window.matchMedia("(max-width: 860px)").matches ? "T/A" : "AT",
+    showToolBar: false,
+    showMenuBar: false,
+    showAlgebraInput: true,
+    algebraInputPosition: "algebra",
+    enableShiftDragZoom: true,
+    enableRightClick: true,
+    showZoomButtons: true,
+    showFullscreenButton: true,
+    showResetIcon: false,
+    showSuggestionButtons: false,
+    showStartTooltip: false,
+    showKeyboardOnFocus: false,
+    preventFocus: true,
+    borderColor: "#2a3544",
+    appletOnLoad: function (api) {
+      window.ggbApi = api;
+      ggbApply(api);
+      var restore = document.getElementById("ggb-restore");
+      if (restore) restore.disabled = false;
+    }
+  };
+  var applet = new GGBApplet(params, true);
+  applet.inject("ggb-element");
+}
+
+document.getElementById("ggb-restore").addEventListener("click", function () {
+  if (window.ggbApi) ggbApply(window.ggbApi);
+});
+window.addEventListener("load", injectGgb);
+</script>
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+</body>
+</html>
